@@ -1,0 +1,93 @@
+/* reset */
+* {
+    -webkit-tap-highlight-color: rgba(0,0,0,0); /* make transparent link selection, adjust last value opacity 0 to 1.0 */
+}
+html{margin:0; padding:0; background: #fff;}
+body{margin:0 auto; padding:0; font:normal 14px Monospace, Arial, sans-serif; color:#111; width:100%;
+    -webkit-touch-callout: none;                /* prevent callout to copy image, etc when tap to hold */
+    -webkit-text-size-adjust: none;             /* prevent webkit from resizing text to fit */
+    -webkit-user-select: none;                  /* prevent copy paste, to allow, change 'none' to 'text' */
+}
+#page{
+    width:100%;min-height:600px;background:#000;color:#eee;margin:0;padding:4px;
+}
+
+/*ALL BOXES CAN SHARE A CLASS WITH COMMON PROPERTIES...*/
+
+
+
+.elem_box{
+    font-size:10px;
+    border:1px solid #eee;
+    width:180px;
+    margin:4px;
+    display:inline-block;
+}
+.elem_box h1{
+    font-size:12px;
+    width:100%;
+    margin:0;padding:0;
+    font-weight:bold;
+    color:#111;
+    background:#eee;
+}
+.elem_box.entries{
+        background:#bbb;
+}
+
+.bank_box{
+    border-color:#faa;
+}
+.bank_box h1{
+    background:#faa;
+}
+
+.person_box{
+    border-color:#a63;
+}
+.person_box h1{
+    background:#a63;
+}
+
+h1.asset_box{
+    /*width:95%;*/
+    background:#111;
+    color:#eee;
+    border-top:1px solid #eee;
+}
+
+
+
+
+
+
+.market_box{
+    font-size:12px;
+    border:1px solid #33b;
+    width:200px;
+    margin:4px;
+    display:inline-block;
+}
+.market_box h1{
+    font-size:15px;
+    width:100%;
+    margin:0;padding:0;
+    font-weight:bold;
+    color:#eee;
+    background:#33b;
+}
+.market_box.supply{
+        background:#1e1;
+}
+.market_box.demand{
+        background:#e11;
+}
+
+
+.color-red{
+    color:#e11;
+}
+
+.color-green{
+    color:#1e1;
+}

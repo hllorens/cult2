@@ -1,0 +1,39 @@
+<!DOCTYPE html> 
+<html>
+
+<head>
+  <title>CULT</title>
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <link rel="stylesheet" type="text/css" href="www/external-git-ignored/cognitionis-js/css/cognitionis.utils.css">
+  <!-- important to make this the last to overwrite the others -->
+  <link rel="stylesheet" href="www/css/index.css"> 
+
+</head>
+
+<body>
+<div id="page">
+	<div id="header"><h1>CULT</h1></div>
+	<div id="zone_canvas" class="canvas-with-header">
+		<div class="text-center vertical-center-container">
+			<div id="zone_canvas_vcentered" class="text-center vertical-center-content">
+                ...
+                <br />
+                <span id="userAgent"></span>
+			</div>
+		</div>
+	</div>
+</div>
+
+<script>
+	//document.getElementById("userAgent").innerHTML=navigator.userAgent;
+	//if(window.location.href=='http://www.cognitionis.com/cult/'){
+        window.location.href =window.location.href.replace(/(\?i.*|index.html)/i, "")+'www/';
+        console.log(window.location.href);
+    //}
+</script>
+
+</body>
+
+</html>

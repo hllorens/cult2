@@ -1,0 +1,82 @@
+The Java version developed with Alex Maté does not work anymore (it was Yahoo finance in csv and included IBEX...)
+
+http://www.google.com/finance/info?q=BME:SAN,BKIA
+http://www.google.com/finance/info?infotype=infoquoteall&q=C,JPM,AIG
+	INDEXBME:IB
+	BME:BKIA
+	BME:SAN
+	NUAN
+	...
+it can be an array: BME:BKIA,SAN...
+
+Con MSE tampoco va
+http://finance.yahoo.com/q/pr?s=SAN.MC (MCE)
+	IBEX 35 (^IBEX) (MCE) 
+	BKIA.MC
+    SAN.MC
+See why they don't work in json queries
+
+
+YQL Console: https://developer.yahoo.com/yql/console/
+https://developer.yahoo.com/yql/console/?q=select%20*%20from%20yahoo.finance.quote%20where%20symbol%20in%20%28%22YHOO%22%2C%22AAPL%22%2C%22GOOG%22%2C%22MSFT%22%29&env=store%3A%2F%2Fdatatables.org%2Falltableswithkeys
+As from the answer from BrianC use the YQL console. But after selecting the "Show Community Tables" go to the bottom of the tables list and expand yahoo where you find plenty of yahoo.finance tables:
+
+Stock Quotes:
+
+    yahoo.finance.quotes
+    yahoo.finance.historicaldata
+
+Fundamental analysis:
+
+    yahoo.finance.keystats
+    yahoo.finance.balancesheet
+    yahoo.finance.incomestatement
+    yahoo.finance.analystestimates
+    yahoo.finance.dividendhistory
+
+Technical analysis:
+
+    yahoo.finance.historicaldata
+    yahoo.finance.quotes
+    yahoo.finance.quant
+    yahoo.finance.option*
+
+General financial information:
+
+    yahoo.finance.industry
+    yahoo.finance.sectors
+    yahoo.finance.isin
+    yahoo.finance.quoteslist
+    yahoo.finance.xchange
+
+Examples:
+GOOG, AAPL, ....
+  NMS (National Market System) 
+  NYSE, NASDAQ
+  An exchange-traded fund (ETF) is an investment fund traded on stock exchanges, much like stocks.
+SAN.MC or SAN.MCE or MCE:SAN does not work...
+EOAA.DE,"E.ON AG",GER,
+Provar BKIA.ES
+PROVAR A VORE SI VA?
+
+http://query.yahooapis.com/v1/public/yql?env=http%3A%2F%2Fdatatables.org%2Falltables.env&format=json&q=select+*+from+yahoo.finance.quoteslist+where+symbol+in+%28%27YHOO%27,%27GOOG%27%29
+quotes=( YHOO GOOG );
+
+es-ES quotes do no seem to work, but you can find them using html parsing
+select * from html where url="http://finance.yahoo.com/q?s=%5EIBEX" and xpath='//div[contains(@class,"yfi_rt_quote_summary_rt_top")]'
+which encoded is:
+select%20*%20from%20html%20where%20url%3D%22http%3A%2F%2Ffinance.yahoo.com%2Fq%3Fs%3D%255EIBEX%22%20and%20xpath%3D%27%2F%2Fdiv%5Bcontains(%40class%2C%22yfi_rt_quote_summary_rt_top%22)%5D%27
+A perhaps easier option is using this
+https://github.com/davidayalas/yql-stocks  for es-ES stocks... to get the ibex perhaps improve it ... PERFECT THE XPATH is easy to improve an I can use over yahoo data so that I can select the index
+This script will collect each json in a separate file and using the same strategy we can merge it all together in one big file only containing indexes and basic values   (name var var_percentage)
+
+
+show tables
+select * from pm.finance.markettickers
+
+Si es un lio la millor opció per a YAHOO pot ser tirar de fer un scraping... html..
+
+
+https://github.com/davidayalas/yql-stocks (downloads from eleconomista.es via scraping and crawling)
+
+
