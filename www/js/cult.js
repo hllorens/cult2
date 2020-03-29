@@ -291,7 +291,6 @@ function crear_partida_si_disponible(partida_existente) {
         activity_timer.set_end_callback(silly_cb_challenge);
         var challange_instance={
             // modified by the game
-            usrs: [session_data.user],  // recompiled at start time, avoid overwritting
             time_left: 60,
             timestamp: get_timestamp_str(),
             question: '',
@@ -355,10 +354,6 @@ function unirse_partida_si_disponible(partida_existente) {
                 alive_beat: session_data.alive_beat,
                 answer: ''
         }
-        var usrs=partida_existente.usrs;
-        usrs.push(session_data.user);
-        console.log("usrs "+usrs.join(","));
-        updates['challenges/'+nombre_partida+'/usrs'] = usrs.sort();
         updates['challenges/'+nombre_partida+'/u/'+session_data.user]=user_instance;
         firebase.database().ref().update(updates);
     }else{
@@ -520,6 +515,10 @@ function listen_challenge(challenge){
 			menu_screen();
 		});
     }else{
+        if(Object.keys(challenge.u).length<2 && challenge.game_status!="waiting"){
+            console.log("canceling game, only 1 player alive");
+            cancel_challenge(challenge);
+        }
         if(session_data.last_zombie_check!=challenge.u[session_data.user].alive_beat){
             session_data.last_zombie_check=challenge.u[session_data.user].alive_beat;
             handle_zombies(challenge); // if someone is no longer alive, kill user and make next invitee inviter
@@ -531,27 +530,32 @@ function listen_challenge(challenge){
             activity_timer.set_end_callback(silly_cb_challenge);
             var accept_button='';
             //var updates = {};
-            if(challenge.u[session_data.user].role=='inviter' && challenge.usrs.length>1){
+            if(session_data.user==get_session_master(challenge) && objectProperties(challenge.u).length>1){
                 accept_button='<button id="start_challenge">start</button>';
             }
             //firebase.database().ref().update(updates);
             //challenge:'+JSON.stringify(challenge)+'
+            var somos="";
+            for (user in challenge.u){
+                if(user!=session_data.user) somos+="<li>"+user+"</li>";
+                else somos+="<li><b>"+user+"</b></li>"
+            }
             canvas_zone_vcentered.innerHTML=' \
-              PARTIDA: '+nombre_partida+'<br />...esperando... <br/>(de momento somos: '+objectProperties(challenge.u).join(', ')+') <br />Creador: '+get_inviter(challenge)+'<br />\
+              PARTIDA: '+nombre_partida+'<br />...esperando... <br/>de momento somos:<br/><ol>'+somos+'</ol><br />\
               '+accept_button+'\
             <br /><button id="go-back" class="minibutton fixed-bottom-right go-back">&lt;</button> \
             ';
-            if(challenge.u[session_data.user].role=='inviter' && challenge.usrs.length>1){
+            console.log('session-master:'+get_session_master(challenge));
+            if(session_data.user==get_session_master(challenge) && objectProperties(challenge.u).length>1){
                 document.getElementById("start_challenge").addEventListener(clickOrTouch,function(){
                     var updates = {};
-                    updates['challenges/'+dbRefChallengeKey+'/usrs'] = (objectProperties(challenge.u)).sort();
                     updates['challenges/'+dbRefChallengeKey+'/game_status'] = 'playing';
                     firebase.database().ref().update(updates);
                     });
             }
             document.getElementById("go-back").addEventListener(clickOrTouch,function(){cancel_challenge(challenge);}.bind(challenge));
         }else if(challenge.game_status=='playing'){
-            if(challenge.u[session_data.user].role=='inviter'){
+            if(session_data.user==get_session_master(challenge)){
                 if(two_alive(challenge)){
                     var randnum=Math.floor((Math.random() * 10));
                     //if (randnum <= 5) diff_country_question_challenge(random_item(indicator_list),challenge);
@@ -569,7 +573,7 @@ function listen_challenge(challenge){
                 // do the checking and trigger a timeout to trigger playing again
                 // TODO do something more fancy (like showing what each person answered ...)
                 //diff_country_question_challenge(random_item(indicator_list),challenge);
-                if(challenge.u[session_data.user].role=='inviter'){
+                if(session_data.user==get_session_master(challenge)){
                     setTimeout(function(){
                         var updates = {};
                         updates['challenges/'+dbRefChallengeKey+'/game_status'] = 'playing';
@@ -633,12 +637,17 @@ function listen_challenge(challenge){
 
 
 
-var get_inviter=function(challenge){
-    var inviter="???";
-    for (var i=0;i<objectProperties(challenge.u).length;i++){
-        if(challenge.u[challenge.usrs[i]].role=="inviter") inviter=challenge.usrs[i];
+var get_session_master=function(challenge){
+    return Object.keys(challenge.u).sort()[0];
+}
+
+
+var get_role=function(role,challenge){
+    var ret="???";
+    for (var user in challenge.u){
+        if(challenge.u[user].role==role) ret=user;
     }
-    return inviter;
+    return ret;
 }
 
 
@@ -646,32 +655,27 @@ function get_challenge_zombies_beat(challenge){
     console.log("get_challenge_zombies_beat calc");
     console.log(challenge);
     var ret={};
-    for (var i=0;i<objectProperties(challenge.u).length;i++){
-        ret[challenge.usrs[i]]=challenge.u[challenge.usrs[i]].alive_beat;
+    for (var user in challenge.u){
+        ret[user]=challenge.u[user].alive_beat;
     }
     return ret;
 }
 
-var get_winner_position=function(challenge){
-    var winner=0;
-    for (var i=1;i<objectProperties(challenge.u).length;i++){
-        if(challenge.u[challenge.usrs[i]].score>challenge.u[challenge.usrs[winner]].score) winner=i;
-        else if(challenge.u[challenge.usrs[i]].score==challenge.u[challenge.usrs[winner]].score) winner=-1;
+var get_winner_string=function(challenge){
+    var winner=session_data.user;
+    var tie="";
+    for (var user in challenge.u) {
+        if(challenge.u[user].score>challenge.u[winner].score){ winner=user; tie="";}
+        else if(challenge.u[user].score==challenge.u[winner].score) tie="tie";
     }
     return winner;
-}
-
-var get_winner_string=function(challenge){
-    var pos=get_winner_position(challenge);
-    if(pos==-1) return "tie";
-    else return challenge.usrs[pos];
 }
 
 
 function two_alive(challenge){
     var alive=0;
-    for (var i=0;i<objectProperties(challenge.u).length;i++){
-        if(challenge.u[challenge.usrs[i]].lifes>0) alive++;
+    for (var user in challenge.u){
+        if(challenge.u[user].lifes>0) alive++;
     }
     console.log('alive: '+alive+' of '+objectProperties(challenge.u).length);
     if(alive>=2) return true;
@@ -685,8 +689,8 @@ function cancel_challenge(challenge){
     if (r == true) {
         var updates = {};
         console.log('canceling '+JSON.stringify(challenge));
-        for (var i=0;i<objectProperties(challenge.u).length;i++){
-            updates['challenges-private/'+firebaseCodec.encodeFully(challenge.usrs[i])] = null;
+        for (var user in challenge.u){
+            updates['challenges-private/'+firebaseCodec.encodeFully(user)] = null;
         }
         console.log('updates '+JSON.stringify(updates));
         updates['challenges/'+dbRefChallengeKey] = null;
@@ -698,8 +702,8 @@ function finish_challenge(challenge){
     var updates = {};
     console.log('game over '+JSON.stringify(challenge));
 	// to be done by each user (so game over is shown for both)
-    //for (var i=0;i<objectProperties(challenge.u).length;i++){
-    //    updates['challenges-private/'+firebaseCodec.encodeFully(challenge.usrs[i])] = null;
+    //for (var user in challenge.u){
+    //    updates['challenges-private/'+firebaseCodec.encodeFully(user)] = null;
     //}
     console.log('updates '+JSON.stringify(updates));
     challenge.game_status='over';
@@ -709,16 +713,16 @@ function finish_challenge(challenge){
 
 
 function all_answered(challenge){
-    for (var i=0;i<objectProperties(challenge.u).length;i++){
-        if(challenge.u[challenge.usrs[i]].lifes>0 && (challenge.u[challenge.usrs[i]].answer==undefined || challenge.u[challenge.usrs[i]].answer==null || challenge.u[challenge.usrs[i]].answer=='')) return false;
+    for (var user in challenge.u){
+        if(challenge.u[user].lifes>0 && (challenge.u[user].answer==undefined || challenge.u[user].answer==null || challenge.u[user].answer=='')) return false;
     }
     console.log('all answered true');
     return true;
 }
 
 function all_unanswered(challenge){
-    for (var i=0;i<objectProperties(challenge.u).length;i++){
-        if(challenge.u[challenge.usrs[i]].answer!='') return false;
+    for (var user in challenge.u){
+        if(challenge.u[user].answer!='') return false;
     }
     console.log('all unanswered true');
     return true;
@@ -728,18 +732,18 @@ function all_unanswered(challenge){
 // instead of showing the result for you it could show empty screen and only the db change trigger the result show...
 function get_enemies_life_answer_representation(challenge){
     var representation=[];
-    for (var u=0;u<objectProperties(challenge.u).length;u++){
+    for (var user in challenge.u){
         var color="black";
         var answer="waiting";
         var bold="";
-        if(challenge.usrs[u]!=session_data.user){
+        if(user!=session_data.user){
                 //bold=";font-weight: bold";
             
-            if(challenge.u[challenge.usrs[u]].answer!=""){
-                if(challenge.u[challenge.usrs[u]].answer==challenge.correct_answer){color="green";answer="V";}
+            if(challenge.u[user].answer!=""){
+                if(challenge.u[user].answer==challenge.correct_answer){color="green";answer="V";}
                 else{color="red";answer="X";}
             }
-            representation.push(''+challenge.usrs[u]+'<span style="color:'+color+''+bold+'">['+answer+']</span> ('+get_lifes_representation(challenge.u[challenge.usrs[u]].lifes)+')');
+            representation.push(''+user+'<span style="color:'+color+''+bold+'">['+answer+']</span> ('+get_lifes_representation(challenge.u[user].lifes)+')');
         }
     }
     return representation.join('<br /> ');
@@ -874,56 +878,49 @@ function handle_zombies(challenge) {
         zombies_beat=challenge_zombies_beat;
         console.log("initialize");
     }else{ // compare local to global
-        for (var i=0;i<objectProperties(challenge.u).length;i++){
-            if(challenge.usrs[i]!=session_data.user){
-                console.log("is "+challenge.usrs[i]+" a zombie "+challenge.u[challenge.usrs[i]].alive_beat+" "+zombies_beat[challenge.usrs[i]]+"? to kill "+zombies_to_kill.join(", "));
-                if(challenge.u[challenge.usrs[i]].alive_beat==zombies_beat[challenge.usrs[i]]){
-                    if(zombies_to_kill.indexOf(challenge.usrs[i])==-1){
+        for (var user in challenge.u){
+            if(user!=session_data.user){
+                console.log("is "+user+" a zombie "+challenge.u[user].alive_beat+" "+zombies_beat[user]+"? to kill "+zombies_to_kill.join(", "));
+                if(challenge.u[user].alive_beat==zombies_beat[user]){
+                    if(zombies_to_kill.indexOf(user)==-1){
                         console.log("candidate");
-                        zombies_to_kill.push(challenge.usrs[i]);
+                        zombies_to_kill.push(user);
                     }else{
-                        console.log("yes KILLLL!\n\n");
-                        // are there leaders before me who could kill zombies?
-                        var leader="none";
-                        for (var ii=0;ii<objectProperties(challenge.u).length;ii++){
-                            if(zombies_to_kill.indexOf(challenge.usrs[ii])==-1){
-                                leader=challenge.usrs[ii];
-                                break;
+                        console.log("yes, who should kill?\n\n");
+                        // are there session_masters before me who could kill zombies?
+                        var leader=get_session_master(challenge);
+                        if(user==leader){
+                            for (var new_leader in challenge.u){
+                                if(zombies_to_kill.indexOf(new_leader)==-1){
+                                    leader=new_leader;
+                                    break;
+                                }
                             }
                         }
                         if(leader==session_data.user){
-                            // take role, kill zombies
-                            var usr2kill=challenge.usrs[i];
-                            console.log("I"+session_data.user+" will kill the zombie!! "+usr2kill);
+                            // the session_master is automated. Kill zombies
+                            console.log("I"+session_data.user+" will kill the zombie!! "+user);
                             // delete user, delete challenge-private, and cleanup session
-                            var updates={};
-                            var tmp=challenge.usrs.splice(challenge.usrs.indexOf(usr2kill), 1);
-                            updates['challenges/'+nombre_partida+'/usrs/'] = tmp;
-                            firebase.database().ref().update(updates);
-                            var tmpRef=firebase.database().ref().child('users/'+usr2kill);
+                            var tmpRef=firebase.database().ref().child('users/'+user);
                             tmpRef.remove()
                             tmpRef=null;
-                            tmpRef=firebase.database().ref().child('challenges-private/'+usr2kill);
+                            tmpRef=firebase.database().ref().child('challenges-private/'+user);
                             //zombies_to_kill=[]; activate to only kill one at a time... could make sense
                             tmpRef.remove()
                             tmpRef=null;
-                            tmpRef=firebase.database().ref().child('challenges/'+nombre_partida+'/u/'+usr2kill);
+                            tmpRef=firebase.database().ref().child('challenges/'+nombre_partida+'/u/'+user);
                             tmpRef.remove()
                             tmpRef=null;
-                            if(tmp.length<2 && challenge.game_status!="waiting"){
-                                console.log("canceling game");
-                                cancel_challenge(challenge);
-                            }
                         }else{
                             console.log("leader will kill "+leader);
                         }
                     }
                 }else{
                     console.log("not a zombie");
-                    zombies_beat[challenge.usrs[i]]=challenge.u[challenge.usrs[i]].alive_beat;
-                    if(zombies_to_kill.indexOf(challenge.usrs[i])!=-1){
-                        console.log("quito zombie");
-                        zombies_to_kill.splice(zombies_to_kill.indexOf(challenge.usrs[i]), 1);
+                    zombies_beat[user]=challenge.u[user].alive_beat;
+                    if(zombies_to_kill.indexOf(user)!=-1){
+                        console.log("lo quito de candidatos a zombie");
+                        zombies_to_kill.splice(zombies_to_kill.indexOf(user), 1);
                     }
                 }
             }
