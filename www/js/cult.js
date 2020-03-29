@@ -536,12 +536,12 @@ function listen_challenge(challenge){
             //firebase.database().ref().update(updates);
             //challenge:'+JSON.stringify(challenge)+'
             var somos="";
-            for (user in challenge.u){
+            for (var user in challenge.u){
                 if(user!=session_data.user) somos+="<li>"+user+"</li>";
-                else somos+="<li><b>"+user+"</b></li>"
+                else somos+=""+user+" (tú)<br />"
             }
             canvas_zone_vcentered.innerHTML=' \
-              PARTIDA: '+nombre_partida+'<br />...esperando... <br/>de momento somos:<br/><ol>'+somos+'</ol><br />\
+              PARTIDA: '+nombre_partida+'<br />...esperando... <br/>de momento somos:<br/>'+somos+'<br />\
               '+accept_button+'\
             <br /><button id="go-back" class="minibutton fixed-bottom-right go-back">&lt;</button> \
             ';
