@@ -537,6 +537,7 @@ function isInteger(value) {     // in the future javacript will have Number.isIn
 
 //////////////////// TIMER FOR A USER ACTIVITY OF ANY KIND ////////////// 
 var ActivityTimer=function (tricker_cb,limit_end_sec,end_cb){	
+	this.name="unnamed-hector";
 	this.seconds=0;
 	this.started=false;
 	this.dom_anchor=undefined;
@@ -548,17 +549,17 @@ var ActivityTimer=function (tricker_cb,limit_end_sec,end_cb){
 	this.end_callback=undefined;
 	if(end_cb!==undefined){this.end_callback=end_cb;}
 }
+ActivityTimer.prototype.set_name=function(value){this.name=value;}
 ActivityTimer.prototype.anchor_to_dom=function(elem){this.dom_anchor=elem;}
 ActivityTimer.prototype.set_tricker_callback=function(cb){this.tricker_callback=cb;}
 ActivityTimer.prototype.set_limit_end_seconds=function(sec){this.limit_end_seconds=sec;}
 ActivityTimer.prototype.set_end_callback=function(cb){this.end_callback=cb;}
 ActivityTimer.prototype.start=function(){
 	if(this.dom_anchor==undefined && this.tricker_callback==undefined){
-		console.log("WARNING: Starging an activity_timer without defining dom_anchor or tricker_callback");
-        // but still run it... we might want it to be hidden from the user...
+		console.log("INFO: activity_timer ("+this.name+") without defining dom_anchor or tricker_callback");
 	}
 	if(this.started){
-		console.log("ERROR: activity_timer already started");
+		console.log("ERROR: activity_timer ("+this.name+") already started");
 	}else{
 		this.started=true
 		if(this.dom_anchor!=undefined){
@@ -601,6 +602,10 @@ ActivityTimer.prototype.reset=function (){
 		this.dom_anchor.innerHTML="00:00:00";
 	}
 	this.seconds=0; // this.minutes=0
+}
+ActivityTimer.prototype.restart=function (){
+	this.reset();
+    this.start();
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
